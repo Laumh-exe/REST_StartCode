@@ -2,6 +2,8 @@ package app;
 
 import app.config.ApplicationConfig;
 import app.config.HibernateConfig;
+import app.entities.Role;
+import app.entities.User;
 import app.exceptions.EntityNotFoundException;
 import app.utils.Routes;
 import jakarta.persistence.EntityManagerFactory;
@@ -12,8 +14,24 @@ public class Main {
 
     public static void main(String[] args) throws EntityNotFoundException {
         // JAVALIN SETUP
-        startServer(hibernateConfig.getEntityManagerFactory(false));
+        EntityManagerFactory emf = hibernateConfig.getEntityManagerFactory(false);
+        startServer(emf);
         //closeServer();
+
+        User user = new User("user", "user");
+        User admin = new User("admin", "admin");
+        Role r1 = new Role("admin");
+        Role r2 = new Role("user");
+        admin.addRole(r1);
+        user.addRole(r2);
+        try(var em = emf.createEntityManager()) {
+            em.getTransaction().begin();
+            em.persist(r1);
+            em.persist(r2);
+            em.persist(user);
+            em.persist(admin);
+            em.getTransaction().commit();
+        }
     }
 
     public static void startServer(EntityManagerFactory emf) {

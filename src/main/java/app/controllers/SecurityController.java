@@ -16,11 +16,14 @@ import io.javalin.http.HttpStatus;
 import io.javalin.validation.ValidationException;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManagerFactory;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 public class SecurityController implements ISecurityController {
     private UserDAO userDAO;
     private ObjectMapper objectMapper = new ObjectMapper();
-    private TokenUtil tokenUtil = new TokenUtil();
 
     public SecurityController(EntityManagerFactory emf) {
         userDAO = UserDAO.getUserDAOInstance(emf);
@@ -34,7 +37,7 @@ public class SecurityController implements ISecurityController {
                 UserDTO userInput = ctx.bodyAsClass(UserDTO.class);
                 User created = userDAO.createUser(userInput.getUsername(), userInput.getPassword());
 
-                String token = tokenUtil.createToken(new UserDTO(created));
+                String token = TokenUtil.createToken(new UserDTO(created));
                 ctx.status(HttpStatus.CREATED).json(new TokenDTO(token, userInput.getUsername()));
             } catch (EntityExistsException e) {
                 ctx.status(HttpStatus.UNPROCESSABLE_CONTENT);
@@ -115,18 +118,24 @@ public class SecurityController implements ISecurityController {
 
     public Handler addRoleToUser() {
         return (ctx) -> {
-            String username = ctx.pathParam("username");
-            String role = ctx.pathParam("role");
+            RoleAssignment roleAssignment = ctx.bodyAsClass(RoleAssignment.class);
             ObjectNode returnObject = objectMapper.createObjectNode();
             try {
-                User user = userDAO.addRoleToUser(username, role);
+                User user = userDAO.addRoleToUser(roleAssignment.username, roleAssignment.role);
                 ctx.status(HttpStatus.OK).json(new UserDTO(user));
             } catch (EntityNotFoundException e) {
                 ctx.status(HttpStatus.NOT_FOUND);
                 ctx.json(returnObject.put("msg", e.getMessage()));
             }
-
         };
     }
 
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Getter
+    @Setter
+    public static class RoleAssignment {
+        private String username;
+        private String role;
+    }
 }

@@ -19,5 +19,10 @@
 >        return instance;
 >    }
 > ```
+> - *Remember to add this before endpoints to verify logged in user:*
+>```
+> before(securityController.authenticate());
+>```
+
 
 

@@ -9,7 +9,9 @@ import app.config.HibernateConfig;
 import app.dtos.TokenDTO;
 import app.entities.Role;
 import app.entities.User;
+import app.testUtils.TestUtil;
 import io.restassured.RestAssured;
+import io.restassured.http.Header;
 import jakarta.persistence.EntityManagerFactory;
 
 public class RoutesTest {
@@ -32,14 +34,6 @@ public class RoutesTest {
                 .setRoute(routes.securityResources())
                 .checkSecurityRoles();
 
-        // Clear any leftovers
-        try (var em = emf.createEntityManager()) {
-            em.getTransaction().begin();
-            em.createQuery("DELETE FROM User").executeUpdate();
-            em.createQuery("DELETE FROM Role").executeUpdate();
-            em.createNativeQuery("DELETE FROM user_roles").executeUpdate();
-            em.getTransaction().commit();
-        }
     }
 
     @AfterAll
@@ -49,75 +43,31 @@ public class RoutesTest {
 
     @BeforeEach
     public void setUpData() {
-        // Insert data into the database
-        User user = new User("user", "user");
-        user.addRole(new Role("user"));
-        User admin = new User("admin", "admin");
-        admin.addRole(new Role("admin"));
-
-        // Insert data into the database
-        try (var em = emf.createEntityManager()) {
-            em.getTransaction().begin();
-            em.persist(user);
-            em.persist(admin);
-            em.getTransaction().commit();
-        }
-
-        // Print all data from database
-        try (var em = emf.createEntityManager()) {
-            em.createQuery("SELECT u FROM User u", User.class).getResultList().forEach(System.out::println);
-            em.createQuery("SELECT r FROM Role r", Role.class).getResultList().forEach(System.out::println);
-            // print out user_role db with the UserRoleDTO
-           // em.createQuery("SELECT new app.dtos.UserRoleDTO(ur.username, ur.role) FROM User u JOIN u.roles ur", UserRoleDTO.class).getResultList().forEach(System.out::println);
-        }
-    }
-
-    @AfterEach
-    public void clearData() {
-        // Clear data from the database
-        try (var em = emf.createEntityManager()) {
-            em.getTransaction().begin();
-            em.createQuery("DELETE FROM User").executeUpdate();
-            em.createQuery("DELETE FROM Role").executeUpdate();
-            em.createNativeQuery("DELETE FROM user_roles").executeUpdate();
-            em.getTransaction().commit();
-        }
-
-        // Print all data from database
-        try (var em = emf.createEntityManager()) {
-            em.createQuery("SELECT u FROM User u", User.class).getResultList().forEach(System.out::println);
-            em.createQuery("SELECT r FROM Role r", Role.class).getResultList().forEach(System.out::println);
-        }
+        TestUtil.createUsers(emf);
     }
 
     @Test
     public void testLoginAsUser() {
         // Test login
-        String expectedUsername = "user";
-        TokenDTO token = RestAssured
+        RestAssured
                 .given()
                 .contentType("application/json")
-                .body("{\"username\":\""+expectedUsername+"\",\"password\":\"user\"}")
+                .body("{\"username\":\"user\",\"password\":\"user\"}")
                 .when()
                 .post("/auth/login")
                 .then()
                 .statusCode(200)
                 .extract()
                 .as(TokenDTO.class);
-
-        String actualUsername= token.getUserName();
-
-        assertEquals(actualUsername, actualUsername);
     }
 
     @Test
     public void testLoginAsAdmin() {
         // Test login
-        String expectedUsername = "admin";
-        TokenDTO token = RestAssured
+        RestAssured
                 .given()
                 .contentType("application/json")
-                .body("{\"username\":\""+expectedUsername+"\",\"password\":\"admin\"}")
+                .body("{\"username\":\"admin\",\"password\":\"admin\"}")
                 .when()
                 .post("/auth/login")
                 .then()
@@ -125,22 +75,58 @@ public class RoutesTest {
                 .extract()
                 .as(TokenDTO.class);
 
-        String actualUsername= token.getUserName();
-
-        assertEquals(actualUsername, actualUsername);
     }
 
     @Test
     public void testLoginWithWrongPassword() {
         // Test login
-        String expectedUsername = "user";
         RestAssured
                 .given()
                 .contentType("application/json")
-                .body("{\"username\":\""+expectedUsername+"\",\"password\":\"wrong\"}")
+                .body("{\"username\":\"user\",\"password\":\"wrong\"}")
                 .when()
                 .post("/auth/login")
                 .then()
                 .statusCode(401);
+    }
+
+    
+    @Test
+    public void testAddRoleToUser() {
+        TokenDTO token = RestAssured
+                .given()
+                .contentType("application/json")
+                .body("{\"username\":\"admin\",\"password\":\"admin\"}")
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TokenDTO.class);
+
+                Header header = new Header("Authorization", "Bearer " + token.getToken());
+        // Test add role to user
+        RestAssured
+                .given()
+                .contentType("application/json")
+                .header(header)
+                .body("{\"username\":\"user\",\"role\":\"unasigned\"}")
+                .when()
+                .post("/auth/addRoleToUser")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    public void testAddRoleToUserAdminNotLoggedIn() {
+        // Test add role to user
+        RestAssured
+                .given()
+                .contentType("application/json")
+                .body("{\"username\":\"user\",\"role\":\"unasigned\"}")
+                .when()
+                .post("/auth/addRole")
+                .then()
+                .statusCode(404);
     }
 }

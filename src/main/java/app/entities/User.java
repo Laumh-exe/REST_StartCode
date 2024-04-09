@@ -36,7 +36,14 @@ public class User {
 
     @ToString.Exclude
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
-    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_name", referencedColumnName = "username"), inverseJoinColumns = @JoinColumn(name = "role_name", referencedColumnName = "name"))
+    @JoinTable(
+        name = "user_roles", 
+        joinColumns = @JoinColumn(
+            name = "user_name", 
+            referencedColumnName = "username"), 
+        inverseJoinColumns = @JoinColumn(
+            name = "role_name", 
+            referencedColumnName = "name"))
     private Set<Role> roles = new HashSet<>();
 
     public User(String username, String password) {

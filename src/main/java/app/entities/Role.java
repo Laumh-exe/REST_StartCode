@@ -19,7 +19,7 @@ public class Role {
     private String name;
 
     @ToString.Exclude
-    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)
     private Set<User> users = new HashSet<>();
 
     public Role(String name) {
