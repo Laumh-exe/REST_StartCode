@@ -13,12 +13,13 @@ import io.restassured.RestAssured;
 import jakarta.persistence.EntityManagerFactory;
 
 public class RoutesTest {
+    private static HibernateConfig hibernateConfig = new HibernateConfig();
     private static EntityManagerFactory emf;
     private static final int port = 7070;
 
     @BeforeAll
     public static void setUp() {
-        emf = HibernateConfig.getEntityManagerFactory(true);
+        emf = hibernateConfig.getEntityManagerFactory(true);
         RestAssured.baseURI = "http://localhost:" + port + "/api";
 
         // Start Server

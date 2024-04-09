@@ -4,34 +4,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import app.entities.User;
+import app.entities.Role;
+import app.exceptions.ApiException;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
-
-import app.entities.Role;
-import app.entities.User;
-import app.exceptions.ApiException;
 import jakarta.persistence.EntityManagerFactory;
 
 public class HibernateConfig {
 
-    private static EntityManagerFactory instace;
     private static String dbName;
 
-    public static EntityManagerFactory getEntityManagerFactory(boolean testing) {
+    public EntityManagerFactory getEntityManagerFactory(boolean testing) {
         if (testing) {
             dbName = "testdb";
-            if (instace == null) {
-                instace = setupHibernateConfigurationForTesting();
-            }
-            return instace;
+            return setupHibernateConfigurationForTesting();
+
         } else {
-            if (instace == null) {
-                dbName = getDBName();
-                instace = buildEntityFactoryConfig();
-            }
-            return instace;
+            dbName = getDBName();
+            return buildEntityFactoryConfig();
         }
     }
 
@@ -97,6 +90,7 @@ public class HibernateConfig {
         // add annotated classes
         configuration.addAnnotatedClass(User.class);
         configuration.addAnnotatedClass(Role.class);
+
     }
 
     private static String getDBName() {
@@ -114,8 +108,8 @@ public class HibernateConfig {
             // Read from ressources/config.properties or from pom.xml depending on the
             // ressourceName
             try (InputStream is = Utils.class.getClassLoader().getResourceAsStream(ressourceName)) { // "config.properties"
-                                                                                                     // or
-                                                                                                     // "properties-from-pom.properties"
+                // or
+                // "properties-from-pom.properties"
                 Properties prop = new Properties();
                 prop.load(is);
                 return prop.getProperty(propName);

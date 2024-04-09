@@ -71,5 +71,8 @@ public class User {
         return rolesAsStrings;
     }
 
+    public void setNewPassword(String newPassword){
+        this.password = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+    }
 
 }

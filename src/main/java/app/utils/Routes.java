@@ -13,14 +13,15 @@ public class Routes {
     public static Routes getInstance(EntityManagerFactory emf) {
         if (instance == null) {
             instance = new Routes();
-            securityController = new SecurityController(emf);
         }
+        securityController = new SecurityController(emf);
         return instance;
     }
 
     public EndpointGroup securityResources() {
         return () -> {
             path("/auth", () -> {
+                before(securityController.authenticate());
                 post("/login", securityController.login(), SecurityRoles.ANYONE);
                 post("/register", securityController.register(), SecurityRoles.ANYONE);
                 post("/addRoleToUser", securityController.addRoleToUser(), SecurityRoles.ADMIN);

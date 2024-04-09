@@ -49,13 +49,13 @@ public class SecurityController implements ISecurityController {
             ObjectNode returnObject = objectMapper.createObjectNode(); // for sending json messages back to the client
             try {
                 UserDTO user = ctx.bodyAsClass(UserDTO.class);
-                System.out.println("USER IN LOGIN: " + user);
 
                 User verifiedUserEntity = userDAO.verifyUser(user.getUsername(), user.getPassword());
-                String token = tokenUtil.createToken(new UserDTO(verifiedUserEntity));
+
+                String token = TokenUtil.createToken(new UserDTO(verifiedUserEntity));
+
                 ctx.status(200).json(new TokenDTO(token, user.getUsername()));
-                UserDTO userDTO = new UserDTO(verifiedUserEntity);    
-                ctx.sessionAttribute("user", userDTO);
+
             } catch (EntityNotFoundException | ValidationException e) {
                 ctx.status(401);
                 System.out.println(e.getMessage());
@@ -104,12 +104,12 @@ public class SecurityController implements ISecurityController {
                 ctx.status(HttpStatus.FORBIDDEN).json(returnObject.put("msg", "Authorization header malformed"));
                 return;
             }
-            UserDTO verifiedTokenUser = tokenUtil.verifyToken(token);
+            UserDTO verifiedTokenUser = TokenUtil.verifyToken(token);
             if (verifiedTokenUser == null) {
                 ctx.status(HttpStatus.FORBIDDEN).json(returnObject.put("msg", "Invalid User or Token"));
             }
             System.out.println("USER IN AUTHENTICATE: " + verifiedTokenUser);
-            ctx.sessionAttribute("user", verifiedTokenUser);
+            ctx.attribute("user", verifiedTokenUser);
         };
     }
 
@@ -125,7 +125,7 @@ public class SecurityController implements ISecurityController {
                 ctx.status(HttpStatus.NOT_FOUND);
                 ctx.json(returnObject.put("msg", e.getMessage()));
             }
-            
+
         };
     }
 
